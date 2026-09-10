@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>GroupGuard — התחברות</title>
+<style>
+  :root { --green:#25D366; --dark:#075E54; --bg:#f7f9f8; --border:#cfe0da; --danger:#c0392b; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); margin:0; color:#1a2e2a;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:32px; width:100%; max-width:380px; }
+  h1 { font-size:20px; color:var(--dark); margin:0 0 4px; text-align:center; }
+  p.sub { text-align:center; color:#667; font-size:13px; margin:0 0 22px; }
+  label { display:block; font-size:13px; margin:14px 0 4px; color:#334; }
+  input { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+  button { width:100%; margin-top:20px; background:var(--green); color:#fff; border:none; border-radius:8px; padding:12px; font-size:15px; cursor:pointer; }
+  .error { color:var(--danger); font-size:13px; margin-top:10px; display:none; text-align:center; }
+  .error.show { display:block; }
+  .footer-link { text-align:center; margin-top:18px; font-size:13px; }
+  .footer-link a { color:var(--dark); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🛡️ GroupGuard</h1>
+  <p class="sub">התחברות לחשבון שלך</p>
+  <form id="loginForm">
+    <label>אימייל</label>
+    <input type="email" id="email" required>
+    <label>סיסמה</label>
+    <input type="password" id="password" required>
+    <div class="error" id="loginError">אימייל או סיסמה שגויים.</div>
+    <button type="submit">התחברות</button>
+  </form>
+  <div class="footer-link">אין לך עדיין חשבון? <a href="/onboarding">הרשמה למערכת</a></div>
+</div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    if (res.ok) {
+      window.location.href = '/dashboard';
+    } else {
+      errEl.classList.add('show');
+    }
+  } catch (e) {
+    errEl.textContent = 'שגיאת תקשורת — נסו שוב.';
+    errEl.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

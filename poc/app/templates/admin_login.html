@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>GroupGuard — כניסת אדמין</title>
+<style>
+  :root { --dark:#075E54; --bg:#111827; --card:#1f2937; --border:#374151; --danger:#f87171; --accent:#25D366; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); margin:0; color:#e5e7eb;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:32px; width:100%; max-width:360px; }
+  h1 { font-size:19px; color:#fff; margin:0 0 4px; text-align:center; }
+  p.sub { text-align:center; color:#9ca3af; font-size:13px; margin:0 0 22px; }
+  label { display:block; font-size:13px; margin:14px 0 4px; color:#cbd5e1; }
+  input { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#111827; color:#fff; }
+  button { width:100%; margin-top:20px; background:var(--accent); color:#062018; font-weight:600; border:none; border-radius:8px; padding:12px; font-size:15px; cursor:pointer; }
+  .error { color:var(--danger); font-size:13px; margin-top:10px; display:none; text-align:center; }
+  .error.show { display:block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🛠️ פאנל אדמין — GroupGuard</h1>
+  <p class="sub">CRM פנימי לצוות — כל המשתמשים והקבוצות במערכת</p>
+  <form id="adminLoginForm">
+    <label>סיסמת אדמין</label>
+    <input type="password" id="admin_password" required autofocus>
+    <div class="error" id="adminLoginError">סיסמה שגויה.</div>
+    <button type="submit">כניסה</button>
+  </form>
+</div>
+<script>
+document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('adminLoginError');
+  errEl.classList.remove('show');
+  const password = document.getElementById('admin_password').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({password}),
+    });
+    if (res.ok) {
+      window.location.href = '/admin';
+    } else {
+      errEl.classList.add('show');
+    }
+  } catch (e) {
+    errEl.textContent = 'שגיאת תקשורת — נסו שוב.';
+    errEl.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

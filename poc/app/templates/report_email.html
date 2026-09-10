@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f7f9f8; margin:0; padding:0; color:#1a2e2a; }
+  .wrap { max-width:640px; margin:0 auto; padding:20px; }
+  .card { background:#fff; border-radius:10px; padding:20px; margin-bottom:16px; border:1px solid #e2e8e5; }
+  h1 { font-size:18px; color:#075E54; margin:0 0 4px; }
+  h2 { font-size:14px; color:#075E54; border-bottom:2px solid #25D366; padding-bottom:6px; }
+  .stat-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .stat { background:#f0faf3; border-radius:8px; padding:10px 14px; text-align:center; min-width:100px; }
+  .stat b { display:block; font-size:20px; color:#075E54; }
+  .stat span { font-size:11px; color:#557; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:right; padding:5px 6px; border-bottom:1px solid #eee; }
+  .sev-critical{color:#c0392b;font-weight:bold} .sev-high{color:#e0651a;font-weight:bold} .sev-medium{color:#e0a800} .sev-low{color:#8e9a97}
+  .flag { background:#fff4e5; border:1px solid #f0c36d; border-radius:6px; padding:8px 12px; font-size:12px; margin-top:8px; }
+  .muted { color:#889; font-size:12px; }
+  a { color:#075E54; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>דו"ח יומי — {{ group_name }}</h1>
+    <div class="muted">{{ date }}</div>
+  </div>
+
+  <div class="card">
+    <h2>סיכום פעילות</h2>
+    <div class="stat-row">
+      <div class="stat"><b>{{ total_messages }}</b><span>הודעות היום</span></div>
+      <div class="stat"><b>{{ change_vs_yesterday_pct if change_vs_yesterday_pct is not none else '—' }}%</b><span>לעומת אתמול</span></div>
+      <div class="stat"><b>{{ avg_7d }}</b><span>ממוצע 7 ימים</span></div>
+      <div class="stat"><b>{{ unique_senders }}</b><span>משתתפים פעילים</span></div>
+    </div>
+    <p class="muted">פילוח לפי סוג: {% for t, c in by_type.items() %}{{ t }}: {{ c }}{{ ', ' if not loop.last }}{% endfor %}</p>
+    <img src="data:image/png;base64,{{ chart_base64 }}" width="100%" alt="התפלגות פעילות לפי שעה">
+  </div>
+
+  <div class="card">
+    <h2>10 המשתתפים הפעילים ביותר</h2>
+    <table>
+      <tr><th>שם</th><th>הודעות</th><th>אחוז</th></tr>
+      {% for p in top_participants %}<tr><td>{{ p.name }}</td><td>{{ p.count }}</td><td>{{ p.pct }}%</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>נושאים מרכזיים שנדונו</h2>
+    {% if topics %}<ul>{% for t in topics %}<li>{{ t }}</li>{% endfor %}</ul>{% else %}<p class="muted">אין מספיק תוכן לסיכום נושאים היום.</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <h2>הפרות ({{ violation_count }})</h2>
+    <p class="muted">
+      {% for sev, c in by_severity.items() %}<span class="sev-{{ sev }}">{{ sev }}: {{ c }}</span>{{ '  ·  ' if not loop.last }}{% endfor %}
+    </p>
+    {% if violations %}
+    <table>
+      <tr><th>חוק</th><th>חומרה</th><th>מאת</th><th>קטע</th></tr>
+      {% for v in violations %}
+      <tr><td>{{ v.rule_name }}</td><td class="sev-{{ v.severity }}">{{ v.severity }}</td><td>{{ v.sender_name }}</td><td>"{{ v.excerpt }}"</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">לא נרשמו הפרות היום.</p>{% endif %}
+  </div>
+
+  {% if deleted_count or unprocessed_count %}
+  <div class="card">
+    <h2>דגלי איכות</h2>
+    {% if deleted_count %}<div class="flag">🗑️ {{ deleted_count }} הודעות נמחקו היום.</div>{% endif %}
+    {% if unprocessed_count %}<div class="flag">⚠️ {{ unprocessed_count }} הודעות לא עובדו במלואן (כשל AI).</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if no_activity_14d %}
+  <div class="card">
+    <div class="flag">
+      ⚠️ אין פעילות בקבוצה מעל 14 ימים רצופים. מומלץ לשקול ניתוק הקבוצה מהמערכת.
+      <a href="{{ dashboard_link }}">מעבר לפאנל לביצוע הפעולה</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <a href="{{ dashboard_link }}">צפייה מלאה בפאנל הניטור</a>
+  </div>
+</div>
+</body>
+</html>

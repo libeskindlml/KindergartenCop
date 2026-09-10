@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f7f9f8; margin:0; padding:0; color:#1a2e2a; }
+  .wrap { max-width:560px; margin:0 auto; padding:20px; }
+  .card { background:#fff; border-radius:10px; padding:20px; border:1px solid #e2e8e5; }
+  h1 { font-size:17px; color:#075E54; margin:0 0 10px; }
+  .sev { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:bold; color:#fff; }
+  .sev-critical{background:#c0392b} .sev-high{background:#e0651a} .sev-medium{background:#e0a800} .sev-low{background:#8e9a97}
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid #eee; vertical-align:top; }
+  th { color:#557; width:110px; white-space:nowrap; }
+  .excerpt { background:#f0faf3; border-radius:8px; padding:10px 12px; font-size:13px; margin-top:10px; white-space:pre-wrap; }
+  .btn { display:inline-block; margin-top:16px; background:#25D366; color:#fff !important; text-decoration:none; padding:10px 18px; border-radius:8px; font-size:13px; }
+  .muted { color:#889; font-size:11px; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>⚠️ התראת GroupGuard — {{ group_name }}</h1>
+    <span class="sev sev-{{ severity }}">{{ severity_label }}</span>
+    <table>
+      <tr><th>חוק שהופר</th><td>{{ rule_name }}</td></tr>
+      <tr><th>שולח ההודעה</th><td>{{ sender_name }} {{ '(' + sender_phone + ')' if sender_phone }}</td></tr>
+      <tr><th>מועד</th><td>{{ time }}</td></tr>
+      {% if explanation %}<tr><th>הסבר</th><td>{{ explanation }}</td></tr>{% endif %}
+    </table>
+    <div class="excerpt">{{ message_excerpt }}</div>
+    <a class="btn" href="{{ link }}">צפייה בפאנל הניהול</a>
+    <div class="muted">התראה זו נשלחה אוטומטית ע"י GroupGuard בשל הפרת אחד מחוקי הקבוצה שהוגדרו באשף ההרשמה.</div>
+  </div>
+</div>
+</body>
+</html>

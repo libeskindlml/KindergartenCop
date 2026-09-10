@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>GroupGuard POC — פאנל ניטור</title>
+<style>
+  :root { --green:#25D366; --dark:#075E54; --bg:#f7f9f8; --card:#ffffff; --border:#e2e8e5; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); margin:0; color:#1a2e2a; }
+  header { background: var(--dark); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  header h1 { font-size:18px; margin:0; }
+  .status { font-size:13px; padding:4px 10px; border-radius:999px; }
+  .status.on { background: var(--green); color:#fff; }
+  .status.off { background:#c0392b; color:#fff; }
+  .nav-actions a { color:#fff; font-size:12px; background:rgba(255,255,255,0.15); padding:5px 10px; border-radius:6px; text-decoration:none; margin-inline-start:6px; }
+  .nav-actions a:hover { background:rgba(255,255,255,0.28); }
+  .admin-banner { background:#fff4e5; border-bottom:2px solid #e0a800; color:#7a5b00; padding:8px 24px; font-size:13px; text-align:center; }
+  main { padding:20px 24px; max-width:1100px; margin:0 auto; }
+  section { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px; }
+  h2 { font-size:15px; color:var(--dark); margin:0 0 12px; border-bottom:2px solid var(--green); padding-bottom:6px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:right; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:#557; font-weight:600; }
+  tr:hover { background:#f0faf3; }
+  .sev { padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; color:#fff; }
+  .sev-low{background:#8e9a97} .sev-medium{background:#e0a800} .sev-high{background:#e0651a} .sev-critical{background:#c0392b}
+  .badge { display:inline-block; padding:1px 6px; border-radius:5px; background:#eef5f1; font-size:11px; }
+  button { background:var(--green); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:12px; }
+  button.secondary { background:#8e9a97; }
+  .muted { color:#889; font-size:12px; }
+  .empty { color:#889; font-style:italic; padding:8px 0; }
+  .account-meta { display:flex; gap:24px; flex-wrap:wrap; }
+  .account-meta div { min-width:150px; }
+  .account-meta b { display:block; font-size:13px; color:var(--dark); }
+  .account-meta span { font-size:12px; color:#557; }
+</style>
+</head>
+<body>
+{% if admin_view %}
+<div class="admin-banner">👁️ מצב צפייה של אדמין — אתה רואה את החשבון הזה מבחוץ, לא מחובר בתור המשתמש.</div>
+{% endif %}
+<header>
+  <h1>🛡️ GroupGuard — {{ group_name }} (POC)</h1>
+  <span class="status {{ 'on' if reader_connected else 'off' }}">
+    {{ 'קורא מחובר' if reader_connected else 'קורא מנותק' }} {{ '· ' + reader_detail if reader_detail }}
+  </span>
+  <span class="status {{ 'on' if group_bound else 'off' }}">
+    {% if group_bound %}קבוצה מנוטרת ✓{% else %}ממתין לאימות הקבוצה{% endif %}
+  </span>
+  <span class="nav-actions">
+    {% if admin_view %}<a href="/admin">← רשימת המשתמשים</a>{% endif %}
+    {% if logout_url %}<a href="{{ logout_url }}">התנתקות</a>{% endif %}
+  </span>
+</header>
+<main>
+
+<section>
+  <h2>פרטי החשבון</h2>
+  <div class="account-meta">
+    <div><b>{{ account.owner_name or '—' }}</b><span>שם בעל החשבון</span></div>
+    <div><b>{{ account.email or '—' }}</b><span>אימייל להתחברות</span></div>
+    <div><b>{{ {'kal':'קל','beinoni':'בינוני','machmir':'מחמיר'}.get(account.strictness_level, account.strictness_level) }}</b><span>רמת הקפדה</span></div>
+    <div><b>{{ monitored_group_id or 'ממתין לזיהוי' }}</b><span>מזהה קבוצה מנוטרת</span></div>
+    <div><b>{{ account.created_at[:10] if account.created_at else '—' }}</b><span>תאריך הרשמה</span></div>
+  </div>
+  {% if not group_bound %}
+  <div style="margin-top:14px; padding:12px; border-radius:8px; background:#fff4e5; border:1px solid #e0a800; font-size:13px; color:#7a5b00;">
+    הקבוצה עדיין לא אומתה. אחרי שהוספתם את מספר ה-Reader לקבוצה, שלחו בקבוצה
+    הודעה שמכילה <b>רק</b> את קוד האימות הבא — זה מה שמקשר את הקבוצה לחשבון הזה:
+    <div style="font-size:20px; font-weight:700; letter-spacing:2px; margin-top:6px; direction:ltr; text-align:center;">
+      {{ account.verification_code or '—' }}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<section>
+  <h2>אנשי קשר להתראות ({{ contacts|length }})</h2>
+  {% if not contacts %}<div class="empty">לא הוגדרו אנשי קשר.</div>{% endif %}
+  <table>
+    <tr><th>שם</th><th>אימייל (ערוץ מיידי)</th><th>טלפון</th><th>סף חומרה</th><th>ערוצים</th></tr>
+    {% for c in contacts %}
+    <tr><td>{{ c.name }}</td><td>{{ c.email or '—' }}</td><td>{{ c.phone_e164 }}</td><td>{{ c.min_severity }}</td><td>{{ c.channels|join(', ') }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+{% if custom_rules %}
+<section>
+  <h2>חוקים מותאמים אישית ({{ custom_rules|length }})</h2>
+  <table>
+    <tr><th>שם</th><th>תיאור</th><th>חומרה</th></tr>
+    {% for r in custom_rules %}
+    <tr><td>{{ r.name }}</td><td>{{ r.description }}</td><td><span class="sev sev-{{ r.severity }}">{{ r.severity }}</span></td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endif %}
+
+<section>
+  <h2>הפרות אחרונות ({{ violations|length }})</h2>
+  {% if not violations %}<div class="empty">אין הפרות רשומות עדיין.</div>{% endif %}
+  <table>
+    <tr><th>מתי</th><th>חוק</th><th>חומרה</th><th>מאת</th><th>ביטחון</th><th>הסבר</th><th>סטטוס</th><th>פעולה</th></tr>
+    {% for v in violations %}
+    <tr id="violation-{{ v.id }}">
+      <td>{{ v.created_at[:19] }}</td>
+      <td>{{ v.rule_name }} <span class="badge">{{ v.rule_kind }}</span>{% if v.shadow_mode %} <span class="badge">Shadow</span>{% endif %}</td>
+      <td><span class="sev sev-{{ v.severity }}">{{ v.severity }}</span></td>
+      <td>{{ v.sender_name or v.sender_phone or 'אנונימי' }}</td>
+      <td>{{ '%.2f' % v.confidence if v.confidence is not none else '-' }}</td>
+      <td>{{ v.explanation }}{% if v.quoted_evidence %}<br><span class="muted">"{{ v.quoted_evidence }}"</span>{% endif %}</td>
+      <td>{{ v.status }}</td>
+      <td>
+        <button onclick="sendFeedback({{ v.id }}, 'handled')">נכון/טופל</button>
+        <button class="secondary" onclick="sendFeedback({{ v.id }}, 'false_positive')">שגוי</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section>
+  <h2>התראות שנשלחו/נרשמו ({{ alerts|length }})</h2>
+  {% if not alerts %}<div class="empty">אין התראות עדיין.</div>{% endif %}
+  <table>
+    <tr><th>מתי</th><th>איש קשר</th><th>ערוץ</th><th>סטטוס</th><th>שגיאה</th></tr>
+    {% for a in alerts %}
+    <tr><td>{{ a.sent_at[:19] }}</td><td>{{ a.contact_name }}</td><td>{{ a.channel }}</td><td>{{ a.status }}</td><td class="muted">{{ a.error or '' }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section>
+  <h2>הודעות אחרונות ({{ messages|length }})</h2>
+  {% if not messages %}<div class="empty">עדיין לא התקבלו הודעות. ודא/י שה-connector מחובר לקבוצה.</div>{% endif %}
+  <table>
+    <tr><th>מתי</th><th>שולח</th><th>סוג</th><th>תוכן</th><th>סטטוס עיבוד</th></tr>
+    {% for m in messages %}
+    <tr>
+      <td>{{ m.received_at[:19] }}</td>
+      <td>{{ m.sender_name or m.sender_phone or 'אנונימי' }}</td>
+      <td>{{ m.msg_type }}{% if m.is_deleted %} <span class="badge">נמחקה</span>{% endif %}{% if m.is_edited %} <span class="badge">נערכה</span>{% endif %}</td>
+      <td>{{ m.text or '(מדיה)' }}</td>
+      <td>{{ m.processing_status }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section>
+  <h2>דוחות יומיים ({{ reports|length }})</h2>
+  <button onclick="sendReportNow()">📧 שלח דוח עכשיו</button>
+  <div id="reportNowMsg" class="muted"></div>
+  {% if not reports %}<div class="empty">עדיין לא נשלח דוח יומי.</div>{% endif %}
+  <table>
+    <tr><th>תאריך</th><th>נשלח אל</th><th>סטטוס</th></tr>
+    {% for r in reports %}
+    <tr><td>{{ r.date }}</td><td>{{ r.sent_to or '—' }}</td><td>{{ r.status }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+</main>
+<script>
+async function sendFeedback(id, status) {
+  const res = await fetch(`/api/violations/${id}/feedback`, {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: `status=${status}`
+  });
+  if (res.ok) location.reload();
+  else alert("שגיאה בשליחת המשוב");
+}
+
+async function sendReportNow() {
+  const el = document.getElementById('reportNowMsg');
+  el.textContent = 'שולח...';
+  try {
+    const res = await fetch("{{ send_report_url }}", { method: "POST" });
+    const data = await res.json();
+    el.textContent = "סטטוס: " + data.status;
+    if (data.status === "sent") setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    el.textContent = "שגיאה בשליחת הדוח";
+  }
+}
+</script>
+</body>
+</html>

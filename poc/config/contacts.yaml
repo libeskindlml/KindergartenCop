@@ -1,0 +1,14 @@
+# ============================================================================
+# GroupGuard POC — אנשי קשר לקבלת התראות (F-6.1/F-6.2)
+# ============================================================================
+alert_contacts:
+  - name: "דוגמה - הורה/מנהל קבוצה"
+    phone_e164: "+972500000000"   # מספר וואטסאפ בפורמט בינלאומי
+    email: ""
+    min_severity: medium          # low | medium | high | critical
+    channels: ["whatsapp"]        # whatsapp | email
+    quiet_hours:
+      enabled: false
+      start: "22:00"
+      end: "07:00"
+    optin_status: pending         # pending | confirmed  (F-6.3 — נדרש אישור בפעם הראשונה)

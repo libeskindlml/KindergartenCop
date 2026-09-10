@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>GroupGuard POC — פאנל ניטור</title>
+<style>
+  :root { --green:#25D366; --dark:#075E54; --bg:#f7f9f8; --card:#ffffff; --border:#e2e8e5; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); margin:0; color:#1a2e2a; }
+  header { background: var(--dark); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  header h1 { font-size:18px; margin:0; }
+  .status { font-size:13px; padding:4px 10px; border-radius:999px; }
+  .status.on { background: var(--green); color:#fff; }
+  .status.off { background:#c0392b; color:#fff; }
+  .nav-actions a { color:#fff; font-size:12px; background:rgba(255,255,255,0.15); padding:5px 10px; border-radius:6px; text-decoration:none; margin-inline-start:6px; }
+  .nav-actions a:hover { background:rgba(255,255,255,0.28); }
+  .admin-banner { background:#fff4e5; border-bottom:2px solid #e0a800; color:#7a5b00; padding:8px 24px; font-size:13px; text-align:center; }
+  main { padding:20px 24px; max-width:1100px; margin:0 auto; }
+  section { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px; }
+  h2 { font-size:15px; color:var(--dark); margin:0 0 12px; border-bottom:2px solid var(--green); padding-bottom:6px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:right; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:#557; font-weight:600; }
+  tr:hover { background:#f0faf3; }
+  .sev { padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; color:#fff; }
+  .sev-low{background:#8e9a97} .sev-medium{background:#e0a800} .sev-high{background:#e0651a} .sev-critical{background:#c0392b}
+  .badge { display:inline-block; padding:1px 6px; border-radius:5px; background:#eef5f1; font-size:11px; }
+  button { background:var(--green); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:12px; }
+  button.secondary { background:#8e9a97; }
+  .muted { color:#889; font-size:12px; }
+  .empty { color:#889; font-style:italic; padding:8px 0; }
+  .account-meta { display:flex; gap:24px; flex-wrap:wrap; }
+  .account-meta div { min-width:150px; }
+  .account-meta b { display:block; font-size:13px; color:var(--dark); }
+  .account-meta span { font-size:12px; color:#557; }
+</style>
+</head>
+<body>
+<div style="background:#eef5ff;border-bottom:2px solid #a9c7f5;color:#1a4a8a;padding:10px 24px;font-size:13px;text-align:center">🧪 תצוגה מקדימה סטטית עם נתוני דוגמה בלבד — נוצרה מתוך app/templates/dashboard.html. הכפתורים "נכון/טופל" ו-"שגוי" לא פעילים כאן (דורשים שרת). להרצה חיה עם נתונים אמיתיים: <code>./scripts/run_core.sh</code> ואז <a href="http://localhost:8000/dashboard" style="color:inherit">localhost:8000/dashboard</a>.</div>
+
+<header>
+  <h1>🛡️ GroupGuard — קבוצת הפיילוט (דוגמה) (POC)</h1>
+  <span class="status on">
+    קורא מחובר · מחובר
+  </span>
+  <span class="status on">
+    קבוצה מנוטרת ✓
+  </span>
+  <span class="nav-actions">
+    
+    <a href="/logout">התנתקות</a>
+  </span>
+</header>
+<main>
+
+<section>
+  <h2>פרטי החשבון</h2>
+  <div class="account-meta">
+    <div><b>לירון (דוגמה)</b><span>שם בעל החשבון</span></div>
+    <div><b>demo@example.com</b><span>אימייל להתחברות</span></div>
+    <div><b>בינוני</b><span>רמת הקפדה</span></div>
+    <div><b>120363012345678901@g.us</b><span>מזהה קבוצה מנוטרת</span></div>
+    <div><b>2026-08-20</b><span>תאריך הרשמה</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>אנשי קשר להתראות (1)</h2>
+  
+  <table>
+    <tr><th>שם</th><th>אימייל (ערוץ מיידי)</th><th>טלפון</th><th>סף חומרה</th><th>ערוצים</th></tr>
+    
+    <tr><td>הורה ראשי</td><td>parent@example.com</td><td>+972521234567</td><td>medium</td><td>email</td></tr>
+    
+  </table>
+</section>
+
+
+<section>
+  <h2>חוקים מותאמים אישית (1)</h2>
+  <table>
+    <tr><th>שם</th><th>תיאור</th><th>חומרה</th></tr>
+    
+    <tr><td>אין לתאם מפגשים מחוץ לביה&#34;ס</td><td>כל הודעה שמתאמת מפגש פיזי מחוץ למסגרת מאורגנת</td><td><span class="sev sev-high">high</span></td></tr>
+    
+  </table>
+</section>
+
+
+<section>
+  <h2>הפרות אחרונות (3)</h2>
+  
+  <table>
+    <tr><th>מתי</th><th>חוק</th><th>חומרה</th><th>מאת</th><th>ביטחון</th><th>הסבר</th><th>סטטוס</th><th>פעולה</th></tr>
+    
+    <tr id="violation-3">
+      <td>2026-09-05T18:35:45</td>
+      <td>קישורים אסורים <span class="badge">deterministic</span></td>
+      <td><span class="sev sev-medium">medium</span></td>
+      <td>מאיה</td>
+      <td>1.00</td>
+      <td>נמצא קישור לדומיין חסום: t.me<br><span class="muted">"https://t.me/spamchannel"</span></td>
+      <td>open</td>
+      <td>
+        <button onclick="sendFeedback(3, 'handled')">נכון/טופל</button>
+        <button class="secondary" onclick="sendFeedback(3, 'false_positive')">שגוי</button>
+      </td>
+    </tr>
+    
+    <tr id="violation-2">
+      <td>2026-09-05T17:10:12</td>
+      <td>בריונות / השפלה כלפי חבר אחר <span class="badge">semantic</span></td>
+      <td><span class="sev sev-high">high</span></td>
+      <td>דני</td>
+      <td>0.91</td>
+      <td>הודעה שמלגלגת על חבר אחר בקבוצה בעקבות טעות שעשה<br><span class="muted">"כולם צוחקים עליך, אתה כזה מביך"</span></td>
+      <td>handled</td>
+      <td>
+        <button onclick="sendFeedback(2, 'handled')">נכון/טופל</button>
+        <button class="secondary" onclick="sendFeedback(2, 'false_positive')">שגוי</button>
+      </td>
+    </tr>
+    
+    <tr id="violation-1">
+      <td>2026-09-05T16:02:31</td>
+      <td>סכנה / פנייה לא הולמת ממבוגר לקטין <span class="badge">semantic</span> <span class="badge">Shadow</span></td>
+      <td><span class="sev sev-critical">critical</span></td>
+      <td>לא ידוע</td>
+      <td>0.86</td>
+      <td>בקשה למפגש פרטי ללא ידיעת ההורים<br><span class="muted">"בוא נפגש רק שנינו, אל תספר להורים"</span></td>
+      <td>open</td>
+      <td>
+        <button onclick="sendFeedback(1, 'handled')">נכון/טופל</button>
+        <button class="secondary" onclick="sendFeedback(1, 'false_positive')">שגוי</button>
+      </td>
+    </tr>
+    
+  </table>
+</section>
+
+<section>
+  <h2>התראות שנשלחו/נרשמו (2)</h2>
+  
+  <table>
+    <tr><th>מתי</th><th>איש קשר</th><th>ערוץ</th><th>סטטוס</th><th>שגיאה</th></tr>
+    
+    <tr><td>2026-09-05T18:35:46</td><td>הורה ראשי</td><td>email</td><td>sent</td><td class="muted"></td></tr>
+    
+    <tr><td>2026-09-05T17:10:13</td><td>הורה ראשי</td><td>log_only</td><td>logged</td><td class="muted">alerts_disabled_by_config</td></tr>
+    
+  </table>
+</section>
+
+<section>
+  <h2>הודעות אחרונות (4)</h2>
+  
+  <table>
+    <tr><th>מתי</th><th>שולח</th><th>סוג</th><th>תוכן</th><th>סטטוס עיבוד</th></tr>
+    
+    <tr>
+      <td>2026-09-05T18:42:10</td>
+      <td>נועה</td>
+      <td>text</td>
+      <td>מישהו יודע באיזו שעה יש חוג מחר?</td>
+      <td>rules_checked</td>
+    </tr>
+    
+    <tr>
+      <td>2026-09-05T18:40:02</td>
+      <td>עידן</td>
+      <td>sticker</td>
+      <td>(מדיה)</td>
+      <td>analyzed</td>
+    </tr>
+    
+    <tr>
+      <td>2026-09-05T18:35:44</td>
+      <td>מאיה</td>
+      <td>text</td>
+      <td>בואו נצטרף כולם לקבוצה החדשה: https://t.me/spamchannel</td>
+      <td>rules_checked</td>
+    </tr>
+    
+    <tr>
+      <td>2026-09-05T18:20:01</td>
+      <td>תום</td>
+      <td>text <span class="badge">נמחקה</span></td>
+      <td>מישהו רוצה להיפגש היום אחרי בית הספר?</td>
+      <td>rules_checked</td>
+    </tr>
+    
+  </table>
+</section>
+
+<section>
+  <h2>דוחות יומיים (1)</h2>
+  <button onclick="sendReportNow()">📧 שלח דוח עכשיו</button>
+  <div id="reportNowMsg" class="muted"></div>
+  
+  <table>
+    <tr><th>תאריך</th><th>נשלח אל</th><th>סטטוס</th></tr>
+    
+    <tr><td>2026-09-04</td><td>demo@example.com</td><td>sent</td></tr>
+    
+  </table>
+</section>
+
+</main>
+<script>
+async function sendFeedback(id, status) {
+  const res = await fetch(`/api/violations/${id}/feedback`, {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: `status=${status}`
+  });
+  if (res.ok) location.reload();
+  else alert("שגיאה בשליחת המשוב");
+}
+
+async function sendReportNow() {
+  const el = document.getElementById('reportNowMsg');
+  el.textContent = 'שולח...';
+  try {
+    const res = await fetch("/api/reports/send-now", { method: "POST" });
+    const data = await res.json();
+    el.textContent = "סטטוס: " + data.status;
+    if (data.status === "sent") setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    el.textContent = "שגיאה בשליחת הדוח";
+  }
+}
+</script>
+</body>
+</html>

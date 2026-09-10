@@ -1,0 +1,78 @@
+# ============================================================================
+# GroupGuard POC — הגדרת חוקי הקבוצה
+# בשלב ה-POC החוקים מוגדרים כאן (לא בפאנל). ראו מסמך האפיון סעיף 5.5.
+# ============================================================================
+
+deterministic:
+  - id: det_links_blocklist
+    name: "קישורים אסורים"
+    severity: medium
+    description: "חסימת קישורים לדומיינים לא מוכרים / רשימה שחורה"
+    params:
+      blocked_domains: ["t.me", "bit.ly", "onlyfans.com"]
+      mode: blacklist   # blacklist | whitelist | all
+
+  - id: det_spam_flood
+    name: "ספאם / הצפה"
+    severity: low
+    description: "יותר מ-N הודעות מאותו משתמש בחלון זמן קצר"
+    params:
+      max_messages: 5
+      window_seconds: 30
+
+  - id: det_contact_info_leak
+    name: "חשיפת פרטי קשר"
+    severity: medium
+    description: "זיהוי מספרי טלפון / כתובות מייל בהודעת טקסט"
+    params:
+      detect_phone: true
+      detect_email: true
+
+semantic:
+  - id: sem_bullying
+    name: "בריונות / השפלה כלפי חבר אחר"
+    severity: high
+    description: "אסור להעליב, ללעוג או להשפיל חברים אחרים בקבוצה, גם בעקיפין או דרך סטיקרים."
+    confidence_threshold: 0.8
+    examples_positive:
+      - "אתה כזה מפגר, תפסיק לדבר שטויות"
+      - "כולם צוחקים עליך מאחורי הגב, את יודעת את זה?"
+      - "[סטיקר לעג שנשלח כתגובה להודעת אבל]"
+    examples_negative:
+      - "חחח נו באמת, אתה מצחיק"
+      - "היי מה קורה איתך, מתגעגעים"
+
+  - id: sem_danger_or_grooming
+    name: "סכנה / פנייה לא הולמת ממבוגר לקטין"
+    severity: critical
+    description: "כל תוכן שעלול להעיד על ניסיון קשר לא הולם עם קטין, בקשה למידע אישי, בקשה למפגש פרטי עם מבוגר זר, או מצוקה נפשית/מחשבות פגיעה עצמית."
+    confidence_threshold: 0.75
+    examples_positive:
+      - "בוא נפגש רק שנינו, אל תספר להורים"
+      - "תשלחי לי תמונה בלי החולצה"
+      - "אני לא רוצה להיות פה יותר, נמאס לי מהחיים"
+    examples_negative:
+      - "בוא נפגש כולנו מחר בפארק אחרי הצהריים"
+      - "נמאס לי מהשיעורי בית היום"
+
+  - id: sem_paid_promotion
+    name: "פרסום מסחרי / שיווק בתשלום"
+    severity: low
+    description: "אסור לפרסם מוצרים או שירותים בתשלום בקבוצה."
+    confidence_threshold: 0.8
+    examples_positive:
+      - "מוכרת עוגיות ביתיות, הזמנות בפרטי!"
+      - "שיעורי פרטיים במתמטיקה, 100 ש\"ח לשעה"
+    examples_negative:
+      - "מישהו יודע המלצה על מורה פרטי טוב?"
+
+# מצב למידה (Shadow Mode) — הפרות נרשמות אך לא נשלחות התראות בפועל
+shadow_mode:
+  enabled: true
+  duration_hours: 48
+
+# Cooldown — אותו חוק לא ייצור יותר מהתראה אחת לאותו משתמש בחלון הזמן, אלא אם קריטי
+cooldown_minutes: 10
+
+# רשימה לבנה — display name-ים שההודעות שלהם לא נבדקות (למשל מנהלי הקבוצה)
+whitelist_display_names: []

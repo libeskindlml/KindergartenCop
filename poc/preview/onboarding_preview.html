@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GroupGuard — הרשמה</title>
+<style>
+  :root { --green:#25D366; --dark:#075E54; --bg:#f7f9f8; --card:#ffffff; --border:#e2e8e5; --danger:#c0392b; --muted:#889; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); margin:0; color:#1a2e2a; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; }
+  header.top { text-align:center; margin-bottom: 22px; }
+  header.top h1 { color: var(--dark); font-size: 22px; margin: 0 0 4px; }
+  header.top p { color: var(--muted); margin:0; font-size: 13px; }
+
+  .steps { display:flex; justify-content:center; gap:6px; margin-bottom: 24px; }
+  .step-dot { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; max-width:120px; }
+  .step-dot .circle { width:30px; height:30px; border-radius:50%; background:#dfe7e4; color:#557; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; transition: all .2s; }
+  .step-dot.active .circle { background: var(--green); color:#fff; }
+  .step-dot.done .circle { background: var(--dark); color:#fff; }
+  .step-dot span.label { font-size: 11px; color: var(--muted); text-align:center; }
+  .step-dot.active span.label { color: var(--dark); font-weight:600; }
+
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .card h2 { font-size: 16px; color: var(--dark); margin: 0 0 4px; }
+  .card p.hint { color: var(--muted); font-size: 12.5px; margin: 0 0 18px; }
+
+  label { display:block; font-size: 13px; font-weight:600; color:#33403c; margin: 14px 0 5px; }
+  label.first { margin-top:0; }
+  input[type=text], input[type=email], input[type=password], input[type=tel], input[type=time], select, textarea {
+    width:100%; padding: 9px 11px; border:1px solid var(--border); border-radius:8px; font-size: 14px; background:#fff; color:#1a2e2a; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+  .field-error { color: var(--danger); font-size: 12px; margin-top: 4px; display:none; }
+  .field-error.show { display:block; }
+  .row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .checkline { display:flex; align-items:center; gap:8px; margin: 10px 0; font-size: 13px; }
+  .checkline input { width:auto; }
+
+  .contact-block, .rule-block { border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:14px; position:relative; background:#fbfdfc; }
+  .block-title { font-size:13px; font-weight:700; color:var(--dark); margin-bottom:6px; }
+  .remove-btn { position:absolute; top:10px; left:10px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; font-weight:600; }
+
+  .strictness-options { display:grid; gap:10px; }
+  .strictness-card { border:2px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; transition: border-color .15s; }
+  .strictness-card:hover { border-color:#bcd; }
+  .strictness-card.selected { border-color: var(--green); background:#f0faf3; }
+  .strictness-card h3 { margin:0 0 4px; font-size:14px; color:var(--dark); }
+  .strictness-card p { margin:0; font-size:12.5px; color:#557; }
+  .strictness-card ul { margin:6px 0 0; padding-inline-start: 18px; font-size:12px; color:#557; }
+
+  .btn { display:inline-block; background: var(--green); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer; }
+  .btn.secondary { background:#eef5f1; color: var(--dark); }
+  .btn.ghost { background:none; color: var(--dark); text-decoration: underline; padding: 8px 4px; font-weight:500; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-row { display:flex; justify-content:space-between; margin-top: 22px; align-items:center; }
+
+  .summary-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+  .summary-row:last-child { border-bottom:none; }
+  .summary-row b { color: var(--dark); }
+
+  .done-phone { background: var(--dark); color:#fff; border-radius:12px; padding: 20px; text-align:center; margin: 18px 0; }
+  .done-phone .num { font-size: 26px; font-weight:700; letter-spacing:1px; direction: ltr; display:inline-block; }
+  .done-phone button { margin-top:10px; }
+  .steps-list { background:#f0faf3; border-radius:10px; padding: 14px 18px; font-size:13.5px; line-height:1.9; }
+  .steps-list li { margin-bottom:4px; }
+  .disclosure-box { background:#fff4e5; border:1px solid #f0c36d; border-radius:8px; padding:10px 14px; font-size:12.5px; margin-top:14px; }
+  .top-alert { background:#fff4e5; border:1px solid #f0c36d; color:#7a4a00; border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:16px; display:none; }
+  .top-alert.show { display:block; }
+
+  [data-screen] { display:none; }
+  [data-screen].active { display:block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🛡️ GroupGuard — הרשמה</h1>
+    <p>הגדירו את הקבוצה שברצונכם לנטר — זה לוקח כ-2 דקות</p>
+  </header>
+
+  <div class="top-alert" id="globalError"></div>
+  <div class="top-alert" id="previewBanner" style="background:#eef5ff;border-color:#a9c7f5;color:#1a4a8a;">🧪 מצב תצוגה מקדימה (Offline Preview) — הקובץ נפתח ישירות מהדיסק, בלי שרת. ה"שליחה" בסוף האשף מדומה ולא נשמרת באמת. להרצה אמיתית: <code>./scripts/run_core.sh</code> ואז <a href="http://localhost:8000/onboarding" style="color:inherit">localhost:8000/onboarding</a>.</div>
+
+  <!-- ================= WIZARD ================= -->
+  <div data-screen="wizard" class="active">
+    <div class="steps" id="stepsIndicator"></div>
+
+    <div class="card">
+      <!-- Step 1: Account -->
+      <section data-step="1">
+        <h2>פרטי חשבון</h2>
+        <p class="hint">אלה פרטי מנהל/ת הקהילה — האימייל ישמש גם לקבלת הדו"ח היומי.</p>
+
+        <label class="first">שם מלא</label>
+        <input type="text" id="acc_name" placeholder="לדוגמה: דנה כהן">
+        <div class="field-error" id="err_acc_name">נא להזין שם.</div>
+
+        <label>אימייל</label>
+        <input type="email" id="acc_email" placeholder="you@example.com">
+        <div class="field-error" id="err_acc_email">כתובת מייל לא תקינה.</div>
+
+        <label>סיסמה</label>
+        <input type="password" id="acc_password" placeholder="לפחות 6 תווים">
+        <div class="field-error" id="err_acc_password">הסיסמה חייבת להכיל לפחות 6 תווים.</div>
+
+        <label>שם הקבוצה שרוצים לנטר</label>
+        <input type="text" id="acc_group_name" placeholder="לדוגמה: כיתה ד׳2 - הורים">
+        <div class="field-error" id="err_acc_group_name">נא להזין שם קבוצה.</div>
+
+        <label>אזור זמן</label>
+        <select id="acc_timezone">
+          <option value="Asia/Jerusalem" selected>ישראל (Asia/Jerusalem)</option>
+          <option value="UTC">UTC</option>
+        </select>
+      </section>
+
+      <!-- Step 2: Contacts -->
+      <section data-step="2" style="display:none">
+        <h2>אנשי קשר להתראות</h2>
+        <p class="hint">מי יקבל הודעת וואטסאפ כשמזוהה הפרה בקבוצה? אפשר להוסיף עד 3 אנשי קשר.</p>
+        <div id="contactsContainer"></div>
+        <button type="button" class="btn ghost" id="addContactBtn">+ הוסף איש קשר נוסף</button>
+      </section>
+
+      <!-- Step 3: Rules -->
+      <section data-step="3" style="display:none">
+        <h2>חוקי הקבוצה</h2>
+        <p class="hint">בחרו רמת הקפדה בסיסית, ואופציונלית הוסיפו חוקים משלכם בשפה חופשית.</p>
+
+        <div class="strictness-options" id="strictnessOptions">
+          <div class="strictness-card" data-value="kal">
+            <h3>מקל</h3>
+            <p>מתאים לקבוצות חברים קטנות.</p>
+            <ul><li>התראה על ספאם/הצפה קיצוני בלבד</li></ul>
+          </div>
+          <div class="strictness-card selected" data-value="beinoni">
+            <h3>בינוני (מומלץ)</h3>
+            <p>מתאים לקבוצות קהילה, ועד בית, הורים.</p>
+            <ul><li>ספאם/הצפה</li><li>חסימת קישורים לא מוכרים</li><li>חשיפת פרטי קשר</li></ul>
+          </div>
+          <div class="strictness-card" data-value="machmir">
+            <h3>מחמיר</h3>
+            <p>מתאים לקבוצות עסקיות/עובדים/מכירות.</p>
+            <ul><li>כל האמור לעיל, ברמת רגישות גבוהה יותר</li></ul>
+          </div>
+        </div>
+
+        <p class="hint" style="margin-top:20px">חוקים נוספים תמיד פעילים ומזהים בריונות/השפלה, וכל סימן לסכנה או פנייה לא הולמת כלפי קטין — ללא תלות ברמת ההקפדה.</p>
+
+        <label style="margin-top:22px">חוקים בשפה חופשית (אופציונלי)</label>
+        <div id="customRulesContainer"></div>
+        <button type="button" class="btn ghost" id="addRuleBtn">+ הוסף חוק בשפה חופשית</button>
+      </section>
+
+      <!-- Step 4: Review -->
+      <section data-step="4" style="display:none">
+        <h2>סיכום לפני שליחה</h2>
+        <p class="hint">בדקו שהכול נכון, ולחצו "סיום הרשמה".</p>
+        <div id="reviewSummary"></div>
+      </section>
+
+      <div class="btn-row">
+        <button type="button" class="btn secondary" id="backBtn">חזרה</button>
+        <button type="button" class="btn" id="nextBtn">הבא</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DONE ================= -->
+  <div data-screen="done">
+    <div class="card">
+      <h2>🎉 ההרשמה הושלמה!</h2>
+      <p class="hint">נשאר רק שלב אחד — לצרף את המספר הבא לקבוצת הוואטסאפ שלכם.</p>
+
+      <div class="done-phone">
+        <div style="font-size:12px; opacity:.85; margin-bottom:6px;">המספר לצירוף לקבוצה</div>
+        <span class="num" id="doneReaderNumber">—</span>
+        <div>
+          <button type="button" class="btn secondary" id="copyNumberBtn">העתק מספר</button>
+        </div>
+      </div>
+
+      <ol class="steps-list">
+        <li>פתחו את קבוצת הוואטסאפ <b id="doneGroupName">—</b>.</li>
+        <li>הוסיפו את המספר שלמעלה כחבר/ה בקבוצה.</li>
+        <li>ה-Bot יזוהה אוטומטית וישלח הודעת גילוי נאות לקבוצה (ראו למטה).</li>
+        <li>חיזרו לפאנל הניטור כדי לוודא שהחיבור פעיל ולעקוב אחרי הודעות והפרות.</li>
+      </ol>
+
+      <div class="disclosure-box" id="disclosureBox">
+        הודעת הגילוי שתישלח לקבוצה בעת ההצטרפות: <span id="disclosureText">—</span>
+      </div>
+
+      <div class="btn-row" style="justify-content:flex-end">
+        <a class="btn" href="/dashboard">מעבר לפאנל הניטור ←</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const OFFLINE_MODE = window.location.protocol === 'file:';
+const TOTAL_STEPS = 4;
+let currentStep = 1;
+let contactCount = 0;
+let ruleCount = 0;
+const MAX_CONTACTS = 3;
+const MAX_RULES = 3;
+
+function showScreen(name) {
+  document.querySelectorAll('[data-screen]').forEach(el => el.classList.toggle('active', el.dataset.screen === name));
+}
+
+function renderSteps() {
+  const labels = ['חשבון', 'איש קשר', 'חוקים', 'סיכום'];
+  const el = document.getElementById('stepsIndicator');
+  el.innerHTML = '';
+  labels.forEach((label, i) => {
+    const n = i + 1;
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (n === currentStep ? ' active' : '') + (n < currentStep ? ' done' : '');
+    dot.innerHTML = `<div class="circle">${n < currentStep ? '✓' : n}</div><span class="label">${label}</span>`;
+    el.appendChild(dot);
+  });
+}
+
+function showStep(n) {
+  document.querySelectorAll('section[data-step]').forEach(s => {
+    s.style.display = (parseInt(s.dataset.step, 10) === n) ? 'block' : 'none';
+  });
+  document.getElementById('backBtn').style.visibility = (n === 1) ? 'hidden' : 'visible';
+  document.getElementById('nextBtn').textContent = (n === TOTAL_STEPS) ? 'סיום הרשמה' : 'הבא';
+  if (n === TOTAL_STEPS) renderReview();
+  renderSteps();
+}
+
+function showGlobalError(msg) {
+  const el = document.getElementById('globalError');
+  if (!msg) { el.classList.remove('show'); return; }
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+}
+
+// ---------------- contacts ----------------
+function addContactBlock(prefill) {
+  if (contactCount >= MAX_CONTACTS) return;
+  contactCount++;
+  const idx = contactCount;
+  const wrap = document.createElement('div');
+  wrap.className = 'contact-block';
+  wrap.dataset.idx = idx;
+  wrap.innerHTML = `
+    ${idx > 1 ? '<button type="button" class="remove-btn" data-remove-contact>הסר ✕</button>' : ''}
+    <div class="block-title">איש קשר ${idx}</div>
+    <label class="first">שם</label>
+    <input type="text" class="c_name" placeholder="לדוגמה: יוסי לוי">
+
+    <label>מדינה</label>
+    <select class="c_country">
+      <option value="IL" selected>ישראל (+972)</option>
+      <option value="OTHER">אחר (מספר בינלאומי מלא)</option>
+    </select>
+
+    <div class="c_il_phone_block">
+      <div class="row2">
+        <div>
+          <label>קידומת</label>
+          <select class="c_il_prefix">
+            <option value="050">050</option>
+            <option value="051">051</option>
+            <option value="052" selected>052</option>
+            <option value="053">053</option>
+            <option value="054">054</option>
+            <option value="055">055</option>
+            <option value="056">056</option>
+            <option value="058">058</option>
+          </select>
+        </div>
+        <div>
+          <label>מספר (7 ספרות)</label>
+          <input type="tel" class="c_il_number" placeholder="1234567" maxlength="7" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field-error c_il_error">יש להזין בדיוק 7 ספרות (בלי הקידומת).</div>
+    </div>
+
+    <div class="c_intl_phone_block" style="display:none">
+      <label>מספר וואטסאפ (כולל קידומת מדינה)</label>
+      <input type="tel" class="c_intl_phone" placeholder="+14155551234">
+      <div class="field-error c_intl_error">מספר לא תקין — פורמט בינלאומי, לדוגמה +14155551234.</div>
+    </div>
+
+    <label>אימייל (לקבלת ההתראות — נשלחות אליו מיידית)</label>
+    <input type="email" class="c_email" placeholder="contact@example.com">
+    <div class="field-error c_email_error">יש להזין כתובת אימייל תקינה — זהו הערוץ שאליו יישלחו ההתראות בזמן אמת.</div>
+
+    <label>סף חומרה מינימלי להתראה</label>
+    <select class="c_severity">
+      <option value="low">נמוך ומעלה</option>
+      <option value="medium" selected>בינוני ומעלה</option>
+      <option value="high">גבוה ומעלה</option>
+      <option value="critical">קריטי בלבד</option>
+    </select>
+    <div class="checkline">
+      <input type="checkbox" class="c_qh_enabled">
+      <label style="margin:0">שעות שקט (לא לשלוח התראות בטווח שעות מסוים)</label>
+    </div>
+    <div class="row2 c_qh_range" style="display:none">
+      <div><label>משעה</label><input type="time" class="c_qh_start" value="22:00"></div>
+      <div><label>עד שעה</label><input type="time" class="c_qh_end" value="07:00"></div>
+    </div>
+  `;
+  document.getElementById('contactsContainer').appendChild(wrap);
+
+  wrap.querySelector('.c_qh_enabled').addEventListener('change', (e) => {
+    wrap.querySelector('.c_qh_range').style.display = e.target.checked ? 'grid' : 'none';
+  });
+
+  wrap.querySelector('.c_country').addEventListener('change', (e) => {
+    const isIL = e.target.value === 'IL';
+    wrap.querySelector('.c_il_phone_block').style.display = isIL ? 'block' : 'none';
+    wrap.querySelector('.c_intl_phone_block').style.display = isIL ? 'none' : 'block';
+  });
+
+  wrap.querySelector('.c_il_number').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 7);
+  });
+
+  const removeBtn = wrap.querySelector('[data-remove-contact]');
+  if (removeBtn) removeBtn.addEventListener('click', () => { wrap.remove(); renumberContacts(); });
+
+  document.getElementById('addContactBtn').style.display = (contactCount >= MAX_CONTACTS) ? 'none' : 'inline-block';
+}
+
+function renumberContacts() {
+  const blocks = document.querySelectorAll('#contactsContainer .contact-block');
+  contactCount = blocks.length;
+  blocks.forEach((b, i) => { b.querySelector('.block-title').textContent = `איש קשר ${i + 1}`; });
+  document.getElementById('addContactBtn').style.display = (contactCount >= MAX_CONTACTS) ? 'none' : 'inline-block';
+}
+
+// ---------------- custom rules ----------------
+function addRuleBlock() {
+  if (ruleCount >= MAX_RULES) return;
+  ruleCount++;
+  const wrap = document.createElement('div');
+  wrap.className = 'rule-block';
+  wrap.innerHTML = `
+    <button type="button" class="remove-btn" data-remove-rule>הסר ✕</button>
+    <div class="block-title">חוק מותאם אישית</div>
+    <label class="first">שם קצר לחוק</label>
+    <input type="text" class="r_name" placeholder="לדוגמה: איסור פרסום פוליטי">
+    <label>תיאור בשפה חופשית</label>
+    <textarea class="r_desc" placeholder="לדוגמה: אסור לדבר על פוליטיקה או להביע עמדות פוליטיות בקבוצה"></textarea>
+    <label>רמת חומרה</label>
+    <select class="r_severity">
+      <option value="low">נמוכה</option>
+      <option value="medium" selected>בינונית</option>
+      <option value="high">גבוהה</option>
+      <option value="critical">קריטית</option>
+    </select>
+  `;
+  document.getElementById('customRulesContainer').appendChild(wrap);
+  wrap.querySelector('[data-remove-rule]').addEventListener('click', () => { wrap.remove(); ruleCount--; updateAddRuleVisibility(); });
+  updateAddRuleVisibility();
+}
+
+function updateAddRuleVisibility() {
+  document.getElementById('addRuleBtn').style.display = (ruleCount >= MAX_RULES) ? 'none' : 'inline-block';
+}
+
+// ---------------- strictness selection ----------------
+document.getElementById('strictnessOptions').addEventListener('click', (e) => {
+  const card = e.target.closest('.strictness-card');
+  if (!card) return;
+  document.querySelectorAll('.strictness-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+});
+
+// ---------------- validation per step ----------------
+function validateStep(n) {
+  clearFieldErrors();
+  let ok = true;
+  const showErr = (id) => { const e = document.getElementById(id); if (e) { e.classList.add('show'); ok = false; } };
+
+  if (n === 1) {
+    if (!document.getElementById('acc_name').value.trim()) showErr('err_acc_name');
+    const email = document.getElementById('acc_email').value.trim();
+    if (!email.includes('@') || !email.split('@').pop().includes('.')) showErr('err_acc_email');
+    if (document.getElementById('acc_password').value.length < 6) showErr('err_acc_password');
+    if (!document.getElementById('acc_group_name').value.trim()) showErr('err_acc_group_name');
+  }
+
+  if (n === 2) {
+    const blocks = document.querySelectorAll('#contactsContainer .contact-block');
+    if (blocks.length === 0) { showGlobalError('נא להוסיף לפחות איש קשר אחד.'); ok = false; }
+    blocks.forEach(b => {
+      const nameEl = b.querySelector('.c_name');
+      if (!nameEl.value.trim()) { nameEl.style.borderColor = 'var(--danger)'; ok = false; } else { nameEl.style.borderColor = ''; }
+
+      const country = b.querySelector('.c_country').value;
+      const ilErr = b.querySelector('.c_il_error');
+      const intlErr = b.querySelector('.c_intl_error');
+
+      if (country === 'IL') {
+        const numEl = b.querySelector('.c_il_number');
+        const valid = /^\d{7}$/.test(numEl.value.trim());
+        ilErr.classList.toggle('show', !valid);
+        numEl.style.borderColor = valid ? '' : 'var(--danger)';
+        if (!valid) ok = false;
+      } else {
+        const phoneEl = b.querySelector('.c_intl_phone');
+        const valid = /^\+[1-9]\d{7,14}$/.test(phoneEl.value.trim());
+        intlErr.classList.toggle('show', !valid);
+        phoneEl.style.borderColor = valid ? '' : 'var(--danger)';
+        if (!valid) ok = false;
+      }
+
+      // אימייל חובה: זהו ערוץ ההתראה המיידי בפועל (ולא מספר הוואטסאפ)
+      const emailEl = b.querySelector('.c_email');
+      const emailErr = b.querySelector('.c_email_error');
+      const emailVal = emailEl.value.trim();
+      const emailValid = emailVal.includes('@') && emailVal.split('@').pop().includes('.');
+      emailErr.classList.toggle('show', !emailValid);
+      emailEl.style.borderColor = emailValid ? '' : 'var(--danger)';
+      if (!emailValid) ok = false;
+    });
+  }
+
+  return ok;
+}
+
+// מרכיב מספר E.164 מתוך מדינה+קידומת+מספר (ישראל) או מתוך שדה בינלאומי חופשי (אחר)
+function getContactPhoneE164(b) {
+  const country = b.querySelector('.c_country').value;
+  if (country === 'IL') {
+    const prefix = b.querySelector('.c_il_prefix').value;   // לדוגמה "052"
+    const number = b.querySelector('.c_il_number').value.trim();
+    return '+972' + prefix.slice(1) + number;                // 052 -> 52 -> +97252XXXXXXX
+  }
+  return b.querySelector('.c_intl_phone').value.trim();
+}
+
+function collectPayload() {
+  const contacts = [...document.querySelectorAll('#contactsContainer .contact-block')].map(b => ({
+    name: b.querySelector('.c_name').value.trim(),
+    phone_e164: getContactPhoneE164(b),
+    email: b.querySelector('.c_email').value.trim(),
+    min_severity: b.querySelector('.c_severity').value,
+    // ערוץ ההתראה המיידי בפועל ב-POC הוא אימייל (לא מספר וואטסאפ) — נשלח מיד
+    // עם זיהוי הפרה. מספר הטלפון עדיין נאסף ונשמר לקראת הרחבה עתידית.
+    channels: ['email'],
+    quiet_hours: {
+      enabled: b.querySelector('.c_qh_enabled').checked,
+      start: b.querySelector('.c_qh_start').value || '22:00',
+      end: b.querySelector('.c_qh_end').value || '07:00',
+    },
+  }));
+
+  const custom_rules = [...document.querySelectorAll('#customRulesContainer .rule-block')]
+    .map(b => ({
+      name: b.querySelector('.r_name').value.trim(),
+      description: b.querySelector('.r_desc').value.trim(),
+      severity: b.querySelector('.r_severity').value,
+    }))
+    .filter(r => r.name && r.description);
+
+  const strictnessCard = document.querySelector('.strictness-card.selected');
+
+  return {
+    account: {
+      name: document.getElementById('acc_name').value.trim(),
+      email: document.getElementById('acc_email').value.trim(),
+      password: document.getElementById('acc_password').value,
+      group_display_name: document.getElementById('acc_group_name').value.trim(),
+      timezone: document.getElementById('acc_timezone').value,
+    },
+    contacts,
+    strictness_level: strictnessCard ? strictnessCard.dataset.value : 'beinoni',
+    custom_rules,
+  };
+}
+
+function severityLabel(v) {
+  return { low: 'נמוך ומעלה', medium: 'בינוני ומעלה', high: 'גבוה ומעלה', critical: 'קריטי בלבד' }[v] || v;
+}
+function strictnessLabel(v) {
+  return { kal: 'מקל', beinoni: 'בינוני', machmir: 'מחמיר' }[v] || v;
+}
+
+function renderReview() {
+  const p = collectPayload();
+  const el = document.getElementById('reviewSummary');
+  let html = `
+    <div class="summary-row"><span>שם</span><b>${p.account.name}</b></div>
+    <div class="summary-row"><span>אימייל</span><b>${p.account.email}</b></div>
+    <div class="summary-row"><span>שם הקבוצה</span><b>${p.account.group_display_name}</b></div>
+    <div class="summary-row"><span>רמת הקפדה</span><b>${strictnessLabel(p.strictness_level)}</b></div>
+  `;
+  p.contacts.forEach((c, i) => {
+    html += `<div class="summary-row"><span>איש קשר ${i + 1}</span><b>${c.name} · ${c.email} (יקבל התראות מיידיות) · ${c.phone_e164} · ${severityLabel(c.min_severity)}</b></div>`;
+  });
+  html += `<div class="summary-row"><span>חוקים מותאמים אישית</span><b>${p.custom_rules.length ? p.custom_rules.map(r => r.name).join(', ') : 'ללא'}</b></div>`;
+  el.innerHTML = html;
+}
+
+// ---------------- navigation ----------------
+document.getElementById('nextBtn').addEventListener('click', async () => {
+  showGlobalError('');
+  if (!validateStep(currentStep)) return;
+
+  if (currentStep < TOTAL_STEPS) {
+    currentStep++;
+    showStep(currentStep);
+    return;
+  }
+
+  // Final submit
+  const btn = document.getElementById('nextBtn');
+  btn.disabled = true;
+  btn.textContent = 'שולח...';
+  const payload = collectPayload();
+
+  if (OFFLINE_MODE) {
+    // תצוגה מקדימה בלבד — אין שרת, מדמים תשובה מוצלחת אחרי רגע קצר
+    await new Promise(r => setTimeout(r, 500));
+    showDoneScreen({
+      reader_phone_display: '+972 55 299 4146 (מה-.env שלכם, נכון לרגע יצירת התצוגה המקדימה)',
+      group_display_name: payload.account.group_display_name,
+      disclosure_text: 'קבוצה זו מנוטרת ע"י GroupGuard לצורך אכיפת חוקי הקבוצה.',
+    });
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = Array.isArray(data.detail)
+        ? data.detail.map(d => d.msg).join(', ')
+        : (data.detail || 'שגיאה בשליחת הטופס');
+      showGlobalError(msg);
+      btn.disabled = false;
+      btn.textContent = 'סיום הרשמה';
+      return;
+    }
+    showDoneScreen(data);
+  } catch (err) {
+    showGlobalError('שגיאת תקשורת עם השרת. ודאו ששירות הליבה רץ.');
+    btn.disabled = false;
+    btn.textContent = 'סיום הרשמה';
+  }
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  if (currentStep > 1) { currentStep--; showStep(currentStep); }
+});
+
+document.getElementById('addContactBtn').addEventListener('click', () => addContactBlock());
+document.getElementById('addRuleBtn').addEventListener('click', () => addRuleBlock());
+
+document.getElementById('copyNumberBtn').addEventListener('click', () => {
+  const num = document.getElementById('doneReaderNumber').textContent;
+  const flashCopied = () => {
+    const btn = document.getElementById('copyNumberBtn');
+    const orig = btn.textContent;
+    btn.textContent = 'הועתק ✓';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(num).then(flashCopied).catch(() => fallbackCopy(num, flashCopied));
+  } else {
+    fallbackCopy(num, flashCopied);
+  }
+});
+
+function fallbackCopy(text, onDone) {
+  // עובד גם ב-file:// שבו Clipboard API לרוב חסום (Secure Context בלבד)
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); onDone(); } catch (e) { /* no-op */ }
+  document.body.removeChild(ta);
+}
+
+function showDoneScreen(data) {
+  document.getElementById('doneReaderNumber').textContent = data.reader_phone_display || 'טרם הוגדר — פנו למנהל המערכת';
+  document.getElementById('doneGroupName').textContent = data.group_display_name || '';
+  document.getElementById('disclosureText').textContent = data.disclosure_text || '';
+  showScreen('done');
+}
+
+// ---------------- init ----------------
+(async function init() {
+  addContactBlock();
+  showStep(1);
+
+  if (OFFLINE_MODE) {
+    document.getElementById('previewBanner').classList.add('show');
+    return; // אין שרת לשאול אותו — תמיד מתחילים מהאשף הריק
+  }
+
+  try {
+    const res = await fetch('/api/account');
+    const data = await res.json();
+    if (data.exists && data.onboarding_completed) {
+      showDoneScreen({
+        reader_phone_display: data.reader_phone_display,
+        group_display_name: data.group_display_name,
+        disclosure_text: data.disclosure_text,
+      });
+    }
+  } catch (err) {
+    // אם אי אפשר להגיע לשרת פשוט נשארים על האשף
+  }
+})();
+</script>
+</body>
+</html>

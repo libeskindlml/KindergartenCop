@@ -1,0 +1,18 @@
+# secrets & local config
+.env
+config/contacts.local.yaml
+connector-whatsapp/auth/
+connector-whatsapp/node_modules/
+
+# data
+data/*.db
+data/media/*
+!data/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# os
+.DS_Store

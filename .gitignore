@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific
+.DS_Store
+**/.DS_Store
+**/node_modules/
+
+# WhatsApp Baileys session/auth (never commit)
+**/auth/
+poc/connector-whatsapp/connector-whatsapp/
+
+# Local data & secrets
+poc/data/*.db
+poc/data/media/*
+!poc/data/.gitkeep
+poc/config/contacts.local.yaml
