@@ -10,6 +10,7 @@ ReaderProvider — מימוש מול connector-whatsapp (שירות Node.js המ
 from __future__ import annotations
 
 import logging
+import os
 
 import httpx
 
@@ -18,8 +19,10 @@ from app.providers.base import SendResult, SessionStatus
 
 logger = logging.getLogger("groupguard.reader")
 
-# ה-connector מאזין מקומית על פורט זה (control API, לא ה-webhook היוצא)
-CONNECTOR_CONTROL_URL = "http://localhost:3001"
+# ה-connector מאזין על פורט זה (control API, לא ה-webhook היוצא).
+# בפריסה מכולות הליבה וה-connector הם שני מארחים נפרדים, ולכן הכתובת ניתנת
+# להגדרה; ברירת המחדל היא הרצה מקומית שבה שני התהליכים על אותו מארח.
+CONNECTOR_CONTROL_URL = os.environ.get("CONNECTOR_CONTROL_URL", "http://localhost:3001")
 
 
 class BaileysReaderProvider:

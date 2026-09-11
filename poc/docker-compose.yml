@@ -6,6 +6,9 @@ services:
       dockerfile: app/Dockerfile
     env_file:
       - .env
+    environment:
+      # Core and connector are separate hosts here, so localhost won't reach it.
+      CONNECTOR_CONTROL_URL: http://connector:3001
     volumes:
       - ./data:/app/data
     expose:
