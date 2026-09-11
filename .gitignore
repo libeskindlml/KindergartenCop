@@ -1,3 +1,6 @@
+# Deploy secrets (SSH keys) — never commit
+.azure-deploy-keys/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -1,0 +1,11 @@
+.venv
+.git
+.env
+.env.example
+data
+connector-whatsapp/node_modules
+connector-whatsapp/auth
+__pycache__
+*.pyc
+.DS_Store
+preview
