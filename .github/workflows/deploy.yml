@@ -51,6 +51,20 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      # The VM runs compose from files on disk, so they must be synced before
+      # `compose up` — otherwise edits to them in git never reach the server.
+      - name: Sync compose files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "poc/docker-compose.yml,poc/Caddyfile"
+          target: /opt/groupguard
+          strip_components: 1
+
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v1.0.3
         with:
