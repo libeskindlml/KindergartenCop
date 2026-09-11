@@ -13,10 +13,8 @@ services:
     restart: unless-stopped
 
   connector:
-    # Opt-in only: the reader number can hold just one Baileys session at a time,
-    # so this must not auto-start while the session runs elsewhere.
-    # Start deliberately with: docker compose --profile connector up -d
-    profiles: ["connector"]
+    # The reader number can hold only one Baileys session at a time — this VM is
+    # now that one place. Do not run a second connector against the same session.
     image: ${ACR_LOGIN_SERVER}/groupguard-connector:latest
     build:
       context: ./connector-whatsapp
