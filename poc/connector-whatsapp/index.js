@@ -44,6 +44,9 @@ const DISCLOSURE_TEXT =
   process.env.DISCLOSURE_MESSAGE_TEXT ||
   'קבוצה זו מנוטרת ע"י GroupGuard לצורך אכיפת חוקי הקבוצה.';
 const CONTROL_PORT = parseInt(process.env.CONNECTOR_CONTROL_PORT || "3001", 10);
+// Timeout על הורדת מדיה (תמונות/סטיקרים/הודעות קוליות) מ-Baileys — כדי שהורדה
+// תקועה (למשל בעיית רשת מול שרתי המדיה של וואטסאפ) לא תתלה את הטיפול בהודעה.
+const MEDIA_DOWNLOAD_TIMEOUT_MS = parseInt(process.env.MEDIA_DOWNLOAD_TIMEOUT_MS || "30000", 10);
 // רשת הגנה נוספת (defense-in-depth) נגד ניתוח הודעות היסטוריות (F: פרטיות —
 // "לנטר רק מרגע ההצטרפות"): מעבר לשכבות ההגנה הקיימות — (1) לא מאזינים כלל
 // לאירוע messaging-history.set של Baileys (סנכרון היסטוריה מרובה-מכשירים),
@@ -96,7 +99,9 @@ function extractTextAndType(message) {
   if (message.imageMessage) return { type: "image", text: message.imageMessage.caption || null };
   if (message.stickerMessage) return { type: "sticker", text: null };
   if (message.videoMessage) return { type: "video", text: message.videoMessage.caption || null }; // מטא-דאטה בלבד ב-POC/MVP
-  if (message.audioMessage) return { type: "audio", text: null }; // מטא-דאטה בלבד ב-POC/MVP (F-3.1)
+  // הודעה קולית/אודיו: יורדת ומועברת ל-media_base64 (ר' getMediaMessagePart למטה)
+  // כדי שהליבה (app/transcription.py) תוכל להמיר ולתמלל אותה (F-3.1 הרחבה).
+  if (message.audioMessage) return { type: "audio", text: null };
   if (message.documentMessage) return { type: "document", text: message.documentMessage.fileName || null };
   if (message.locationMessage) return { type: "location", text: null };
   if (message.contactMessage) return { type: "contact", text: message.contactMessage.displayName || null };
@@ -108,7 +113,16 @@ function getMediaMessagePart(message) {
   if (!message) return null;
   if (message.imageMessage) return { part: message.imageMessage, mimetype: message.imageMessage.mimetype };
   if (message.stickerMessage) return { part: message.stickerMessage, mimetype: message.stickerMessage.mimetype || "image/webp" };
+  if (message.audioMessage) return { part: message.audioMessage, mimetype: message.audioMessage.mimetype || "audio/ogg; codecs=opus" };
   return null;
+}
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 async function buildBaseEvent(msg, eventType) {
@@ -181,7 +195,11 @@ async function handleIncomingMessage(msg) {
   const mediaPart = getMediaMessagePart(msg.message);
   if (mediaPart) {
     try {
-      const buffer = await downloadMediaMessage(msg, "buffer", {});
+      const buffer = await withTimeout(
+        downloadMediaMessage(msg, "buffer", {}),
+        MEDIA_DOWNLOAD_TIMEOUT_MS,
+        "הורדת מדיה"
+      );
       event.media_base64 = buffer.toString("base64");
       event.media_mimetype = mediaPart.mimetype;
     } catch (err) {

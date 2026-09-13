@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     anthropic_model_classify: str = "claude-haiku-4-5"
     anthropic_model_summarize: str = "claude-sonnet-4-5"
 
+    # OpenAI — תמלול הודעות קוליות מוואטסאפ (app/transcription.py). המפתח נקרא
+    # אך ורק ממשתנה סביבה זה — אין ולא יהיה מפתח מוטבע בקוד.
+    openai_api_key: str = ""
+    openai_transcription_model: str = "gpt-4o-mini-transcribe"
+    # שפת התמלול הצפויה (ISO-639-1). הקבוצה עברית ברירת המחדל — ר' סעיף 7 באפיון.
+    openai_transcription_language: str = "he"
+    openai_transcription_timeout_seconds: float = 30.0
+    ffmpeg_path: str = "ffmpeg"
+    ffmpeg_timeout_seconds: float = 30.0
+    # מגבלות גודל על קובץ האודיו שהתקבל (בייטים) — הגנה מפני קבצים ריקים/ענקיים
+    # לפני שהם בכלל מגיעים להמרה/לתמלול. 20MB נשאר מתחת למגבלת ה-25MB של OpenAI.
+    max_voice_message_bytes: int = 20 * 1024 * 1024
+    min_voice_message_bytes: int = 100
+
     # reader (baileys connector)
     connector_auth_dir: str = "./connector-whatsapp/auth"
     # אין למלא ידנית! מזהה הקבוצה המנוטרת נקבע ונשמר אוטומטית על כל חשבון

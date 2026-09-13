@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS messages (
     sender_name TEXT,
     msg_type TEXT NOT NULL,           -- text | image | sticker | video | audio | document | location | other
     text TEXT,
+    -- NULL עבור הודעות רגילות. 'voice' כאשר text הוא תמלול (לא הטקסט המקורי) של
+    -- הודעה קולית שהתקבלה כ-msg_type='audio' — ר' app/transcription.py. msg_type
+    -- עצמו לא משתנה (נשאר 'audio'), כך שמקור ההודעה המקורי תמיד נשמר.
+    source_type TEXT,
     media_path TEXT,
     media_sha256 TEXT,
     is_forwarded INTEGER DEFAULT 0,
@@ -182,6 +186,7 @@ def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
         _migrate_verification_code(conn)
+        _migrate_source_type(conn)
 
 
 def now_iso() -> str:
@@ -557,6 +562,14 @@ def _migrate_verification_code(conn: sqlite3.Connection) -> None:
     for row in missing:
         code = _unique_verification_code(conn)
         conn.execute("UPDATE accounts SET verification_code = ? WHERE id = ?", (code, row["id"]))
+
+
+def _migrate_source_type(conn: sqlite3.Connection) -> None:
+    """הוספת עמודת source_type להודעות שנוצרו לפני שהיא נוספה לסכימה (ר' הערה
+    ב-SCHEMA למעלה) — CREATE TABLE IF NOT EXISTS לא משנה טבלה קיימת."""
+    cols = [row[1] for row in conn.execute("PRAGMA table_info(messages)")]
+    if "source_type" not in cols:
+        conn.execute("ALTER TABLE messages ADD COLUMN source_type TEXT")
 
 
 def create_account(**fields: Any) -> int:

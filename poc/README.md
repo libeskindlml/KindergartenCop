@@ -46,6 +46,11 @@ cd connector-whatsapp
 npm install
 ```
 
+**FFmpeg** — תלות מערכת (לא חבילת Python), נדרשת להמרת הודעות קוליות מוואטסאפ
+לפני תמלול (ר' `app/transcription.py`). מריצים דרך Docker (`app/Dockerfile`)?
+כבר מותקן אוטומטית באימג'. מריצים מקומית? יש להתקין בעצמכם, למשל
+`brew install ffmpeg` (macOS) או `apt-get install ffmpeg` (Debian/Ubuntu).
+
 ## התקנה — שלב 2: חיבוריות ה-API (הקובץ שביקשתם)
 
 ```bash
@@ -56,6 +61,7 @@ cp .env.example .env
 | מה | איפה משיגים | חובה ל-POC? |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) → API Keys | **כן** — בלי זה אין סיווג חוקים סמנטיים ולא הבנת תמונות/סטיקרים |
+| `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | לתמלול הודעות קוליות בלבד (F-3.1) — בלי זה הודעה קולית תירשם ב-DB אך לא תתומלל ולא תעבור למנוע החוקים (נכשלת בעדינות, לא מפילה קליטה) |
 | `READER_WHATSAPP_NUMBER` | המספר הנייד (E.164) שדרכו יעבוד הסוכן — הזינו *לפני* הרצת ה-connector כדי להתחבר בקוד צימוד במקום QR (ראו `connector-whatsapp/README.md`) | כן |
 | `WA_CLOUD_API_TOKEN`, `WA_CLOUD_API_PHONE_NUMBER_ID` | [developers.facebook.com](https://developers.facebook.com/docs/whatsapp/cloud-api/get-started) → יצירת אפליקציית WhatsApp Business | לא חובה מיידית — כל עוד `ALERTS_SEND_VIA_WHATSAPP=false` ההתראות נשלחות במייל בלבד |
 | `WA_ALERT_TEMPLATE_NAME` | תבנית הודעה שתאשרו מול Meta (Message Templates) | נדרש לפני ש-`ALERTS_SEND_VIA_WHATSAPP=true` |

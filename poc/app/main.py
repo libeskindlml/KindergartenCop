@@ -34,6 +34,7 @@ from app.providers.reader_baileys import get_reader_provider
 from app.reports import build_and_send_daily_report
 from app.rules_engine import STRICTNESS_LEVELS, evaluate_message
 from app.scheduler import start_scheduler, stop_scheduler
+from app.transcription import VoiceTranscriptionError, transcribe_voice_message
 
 logging.basicConfig(level=get_settings().log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("groupguard.main")
@@ -42,6 +43,7 @@ TEMPLATES_DIR = BASE_DIR / "app" / "templates"
 _env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=select_autoescape(["html"]))
 
 _MEDIA_TYPES_WITH_VISION = {"image", "sticker"}
+_VOICE_MSG_TYPES = {"audio"}
 
 
 # ============================================================================
@@ -396,9 +398,19 @@ async def whatsapp_reader_webhook(
 
 
 async def _handle_incoming_message(event: dict, account_id: int) -> JSONResponse:
+    # אידמפוטנטיות: אם ה-provider (connector-whatsapp) כבר שלח לנו את ההודעה הזו
+    # בעבר (ריטריי ברמת ה-webhook, לדוגמה אחרי timeout/ניתוק זמני), מדלגים לגמרי —
+    # לא מתמללים שוב (עלות/כפילות), לא מריצים שוב את מנוע החוקים ולא שולחים שוב
+    # התראות. insert_message לבדו לא מספיק כאן כי הוא רק מונע *כפילות שורה* ב-DB;
+    # בלי הבדיקה המפורשת הזו הקוד שממשיך היה עדיין רץ שוב על ההודעה הקיימת.
+    provider_message_id = event.get("provider_message_id")
+    if provider_message_id and db.get_message_by_provider_id(provider_message_id):
+        logger.info("הודעה עם provider_message_id שכבר טופלה התקבלה שוב — מדלגים (ריטריי מה-provider)")
+        return JSONResponse({"status": "duplicate_ignored"})
+
     message_id = db.insert_message(
         account_id=account_id,
-        provider_message_id=event.get("provider_message_id"),
+        provider_message_id=provider_message_id,
         group_id=event.get("group_id"),
         sender_phone=event.get("sender_phone"),
         sender_name=event.get("sender_name"),
@@ -414,6 +426,14 @@ async def _handle_incoming_message(event: dict, account_id: int) -> JSONResponse
 
     media_analysis = None
     msg_type = event.get("msg_type", "text")
+
+    if msg_type in _VOICE_MSG_TYPES and event.get("media_base64"):
+        transcribed_ok = await _transcribe_and_store(message_id, event)
+        if not transcribed_ok:
+            # תמלול נכשל (הורדה/המרה/API ריקים/שגויים) — לא ממשיכים למנוע החוקים
+            # עם טקסט ריק/שגוי; ההודעה כבר נרשמה ב-DB עם processing_status מתאים.
+            return JSONResponse({"status": "ok", "message_id": message_id, "violations": 0})
+
     if msg_type in _MEDIA_TYPES_WITH_VISION and event.get("media_base64"):
         try:
             raw_bytes = base64.b64decode(event["media_base64"])
@@ -442,6 +462,45 @@ async def _handle_incoming_message(event: dict, account_id: int) -> JSONResponse
         violations = []
 
     return JSONResponse({"status": "ok", "message_id": message_id, "violations": len(violations)})
+
+
+async def _transcribe_and_store(message_id: int, event: dict) -> bool:
+    """
+    מתמלל הודעה קולית נכנסת (F-3.1 הרחבה) ומעדכן את הטקסט על *אותה שורת הודעה*
+    שכבר נוצרה ב-DB (msg_type נשאר 'audio' — מקור ההודעה תמיד נשמר; source_type
+    מסומן 'voice'). ברגע שהטקסט נשמר, evaluate_message ממשיכה בדיוק כמו על כל
+    הודעת טקסט רגילה — היא רק קוראת message['text'] מה-DB, ולא מבחינה בין המקורות.
+    מחזיר True אם התמלול הצליח והטקסט נשמר; False בכל כשל (ואז ה-caller לא ממשיך
+    למנוע החוקים עם טקסט ריק/שגוי).
+    """
+    try:
+        raw_bytes = base64.b64decode(event["media_base64"])
+    except Exception:  # noqa: BLE001
+        logger.exception("נכשל פענוח Base64 של הודעה קולית %s", message_id)
+        db.update_message(message_id, processing_status="transcription_failed")
+        return False
+
+    try:
+        transcription_text = await transcribe_voice_message(
+            raw_bytes=raw_bytes, mimetype=event.get("media_mimetype")
+        )
+    except VoiceTranscriptionError as exc:
+        logger.warning("תמלול הודעה קולית %s נכשל בשלב '%s': %s", message_id, exc.stage, exc)
+        db.update_message(message_id, processing_status="transcription_failed")
+        return False
+    except Exception:  # noqa: BLE001 — fail-safe: כשל תמלול לא מפיל את הקליטה
+        logger.exception("שגיאה לא צפויה בתמלול הודעה קולית %s", message_id)
+        db.update_message(message_id, processing_status="transcription_failed")
+        return False
+
+    db.update_message(
+        message_id,
+        text=transcription_text,
+        source_type="voice",
+        processing_status="transcribed",
+    )
+    logger.info("הודעה קולית %s תומללה בהצלחה", message_id)
+    return True
 
 
 def _handle_message_mutation(event: dict) -> JSONResponse:
